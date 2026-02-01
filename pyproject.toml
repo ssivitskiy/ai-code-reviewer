@@ -1,0 +1,165 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-code-reviewer"
+version = "1.0.0"
+description = "Intelligent code review powered by LLMs"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "Stepan Sivitsky", email = "stepan.sivitsky@yandex.ru" }
+]
+keywords = [
+    "code-review",
+    "ai",
+    "llm",
+    "gpt",
+    "claude",
+    "static-analysis",
+    "developer-tools",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "openai>=1.0.0",
+    "anthropic>=0.18.0",
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "pyyaml>=6.0",
+    "requests>=2.28.0",
+]
+
+[project.optional-dependencies]
+api = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.0.0",
+]
+demo = [
+    "streamlit>=1.30.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.0",
+    "pre-commit>=3.6.0",
+    "types-requests>=2.31.0",
+    "types-PyYAML>=6.0.0",
+]
+all = [
+    "ai-code-reviewer[api,demo,dev]",
+]
+
+[project.scripts]
+ai-review = "cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/techn4r/ai-code-reviewer"
+Documentation = "https://ai-code-reviewer.readthedocs.io"
+Repository = "https://github.com/techn4r/ai-code-reviewer"
+Issues = "https://github.com/techn4r/ai-code-reviewer/issues"
+Changelog = "https://github.com/techn4r/ai-code-reviewer/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_code_reviewer", "api", "cli"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/api",
+    "/cli",
+    "/tests",
+    "/demo",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--cov=ai_code_reviewer",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["src/ai_code_reviewer"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_any_generics = true
+no_implicit_optional = true
+warn_redundant_casts = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "openai.*",
+    "anthropic.*",
+    "streamlit.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "ARG",
+    "SIM",
+]
+ignore = [
+    "E501",
+    "B008",
+    "B905",
+    "C901",
+]
+
+[tool.ruff.per-file-ignores]
+"tests/*" = ["ARG"]
+
+[tool.ruff.isort]
+known-first-party = ["ai_code_reviewer"]
