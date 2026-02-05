@@ -1,0 +1,99 @@
+name: 'AI Code Reviewer'
+description: 'Automatically review pull requests with AI-powered code analysis'
+author: 'Stepan Sivitsky'
+
+branding:
+  icon: 'search'
+  color: 'purple'
+
+inputs:
+  github-token:
+    description: 'GitHub token for posting comments'
+    required: true
+  
+  model:
+    description: 'Model to use (gpt-4, claude-3-opus, local)'
+    required: false
+    default: 'gpt-4'
+  
+  provider:
+    description: 'LLM provider (openai, anthropic, local)'
+    required: false
+    default: 'openai'
+  
+  api-key:
+    description: 'API key for the LLM provider'
+    required: false
+  
+  severity:
+    description: 'Minimum severity to comment on (low, medium, high, critical)'
+    required: false
+    default: 'medium'
+  
+  max-comments:
+    description: 'Maximum number of comments to post'
+    required: false
+    default: '10'
+  
+  include-positive:
+    description: 'Include positive feedback in summary'
+    required: false
+    default: 'true'
+  
+  config-path:
+    description: 'Path to configuration file'
+    required: false
+    default: '.ai-review.yml'
+
+outputs:
+  issues-found:
+    description: 'Number of issues found'
+  
+  quality-score:
+    description: 'Overall quality score (0-10)'
+  
+  review-summary:
+    description: 'Summary of the review'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install AI Code Reviewer
+      shell: bash
+      run: |
+        pip install ai-code-reviewer
+    
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v42
+      with:
+        files: |
+          **/*.py
+          **/*.js
+          **/*.ts
+          **/*.jsx
+          **/*.tsx
+          **/*.go
+          **/*.rs
+          **/*.java
+    
+    - name: Run AI Code Review
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        OPENAI_API_KEY: ${{ inputs.api-key }}
+        ANTHROPIC_API_KEY: ${{ inputs.api-key }}
+      run: |
+        python ${{ github.action_path }}/review_pr.py \
+          --provider "${{ inputs.provider }}" \
+          --model "${{ inputs.model }}" \
+          --severity "${{ inputs.severity }}" \
+          --max-comments "${{ inputs.max-comments }}" \
+          --include-positive "${{ inputs.include-positive }}" \
+          --config "${{ inputs.config-path }}" \
+          --changed-files "${{ steps.changed-files.outputs.all_changed_files }}"
