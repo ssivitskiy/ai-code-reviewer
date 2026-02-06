@@ -44,7 +44,7 @@ def get_user(username):
     cursor.execute(f"SELECT * FROM users WHERE username = '{username}'")
     return cursor.fetchone()
 '''
-    
+
     result = reviewer.review(code, language="python")
 
     high_issues = result.filter_by_severity(Severity.HIGH)
@@ -52,11 +52,11 @@ def get_user(username):
 
 def example_review_file():
     from ai_code_reviewer import CodeReviewer
-    
+
     reviewer = CodeReviewer()
 
     result = reviewer.review_file("path/to/your/file.py")
-    
+
     print(f"Quality Score: {result.summary.quality_score}/10")
     print(f"Total Issues: {result.summary.total_issues}")
     print(f"Bugs: {result.summary.bugs}")
@@ -64,7 +64,7 @@ def example_review_file():
 
 def example_review_diff():
     from ai_code_reviewer import CodeReviewer
-    
+
     reviewer = CodeReviewer()
 
     diff = '''
@@ -73,7 +73,7 @@ diff --git a/utils.py b/utils.py
 +++ b/utils.py
 @@ -10,6 +10,12 @@ def process_data(data):
      return result
- 
+
 +def unsafe_eval(user_input):
 +    # This is dangerous!
 +    return eval(user_input)
@@ -82,9 +82,9 @@ diff --git a/utils.py b/utils.py
      if value:
          return True
 '''
-    
+
     results = reviewer.review_diff(diff)
-    
+
     for file_result in results:
         print(f"\n📁 {file_result.file_path}")
         for issue in file_result.issues:
@@ -93,17 +93,17 @@ diff --git a/utils.py b/utils.py
 
 def example_review_staged():
     from ai_code_reviewer import CodeReviewer
-    
+
     reviewer = CodeReviewer()
 
     results = reviewer.review_staged()
-    
+
     if not results:
         print("No staged changes to review.")
         return
-    
+
     total_issues = sum(len(r.issues) for r in results)
-    
+
     if total_issues == 0:
         print("✅ All changes look good! Safe to commit.")
     else:
@@ -119,14 +119,14 @@ def example_anthropic():
     from ai_code_reviewer import CodeReviewer
     from ai_code_reviewer.analyzer import ReviewConfig
     from ai_code_reviewer.models import LLMProvider
-    
+
     config = ReviewConfig(
         provider=LLMProvider.ANTHROPIC,
         model="claude-3-opus-20240229",
     )
-    
+
     reviewer = CodeReviewer(config)
-    
+
     result = reviewer.review(
         "def foo(x): return x + 1",
         language="python",
@@ -136,19 +136,20 @@ def example_anthropic():
 
 def example_local_llm():
     import os
+
     from ai_code_reviewer import CodeReviewer
     from ai_code_reviewer.analyzer import ReviewConfig
     from ai_code_reviewer.models import LLMProvider
 
     os.environ["LOCAL_LLM_URL"] = "http://localhost:11434/v1"
-    
+
     config = ReviewConfig(
         provider=LLMProvider.LOCAL,
         model="codellama",
     )
-    
+
     reviewer = CodeReviewer(config)
-    
+
     result = reviewer.review(
         "function add(a, b) { return a + b; }",
         language="javascript",
@@ -169,7 +170,7 @@ def example_api_integration():
             "mode": "standard",
         }
     )
-    
+
     if response.ok:
         result = response.json()
         print(f"Quality Score: {result['summary']['quality_score']}")
@@ -179,18 +180,19 @@ def example_api_integration():
         print(f"Error: {response.text}")
 
 def example_batch_review():
-    from pathlib import Path
     from concurrent.futures import ThreadPoolExecutor
+    from pathlib import Path
+
     from ai_code_reviewer import CodeReviewer
-    
+
     reviewer = CodeReviewer()
 
     files = list(Path("src").rglob("*.py"))
-    
+
     def review_file(file_path):
         try:
             return str(file_path), reviewer.review_file(file_path)
-        except Exception as e:
+        except Exception:
             return str(file_path), None
 
     results = {}
@@ -202,7 +204,7 @@ def example_batch_review():
     total_issues = sum(
         len(r.issues) for r in results.values() if r
     )
-    
+
     print(f"Reviewed {total_files} files")
     print(f"Total issues found: {total_issues}")
 
@@ -213,5 +215,5 @@ if __name__ == "__main__":
 
     print("\n📝 Example 1: Basic Review")
     print("-" * 40)
-    
+
     print("\nSee the source code for more examples!")

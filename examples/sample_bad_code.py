@@ -1,4 +1,3 @@
-import os
 import pickle
 import subprocess
 
@@ -36,12 +35,13 @@ def load_data(data):
 def calculate(expression):
     return eval(expression)
 
-def append_to_list(item, target_list=[]):
+def append_to_list(item, target_list=None):
+    if target_list is None:
+        target_list = []
     target_list.append(item)
     return target_list
 
 def build_string(items):
-    unused_variable = 42
     result = ""
     for item in items:
         result = result + str(item) + ", "
@@ -56,7 +56,7 @@ def risky_operation():
 
 
 def read_file(path):
-    f = open(path, 'r')
+    f = open(path)
     content = f.read()
     return content
 
@@ -70,23 +70,16 @@ def increment():
 
 
 def check_value(value):
-    if value == None:
-        return False
-    return True
+    return value is not None
 
 def is_valid(flag):
-    if flag == True:
+    if flag:
         return "Yes"
     return "No"
 
 def complex_function(a, b, c, d):
-    if a:
-        if b:
-            if c:
-                if d:
-                    if a > b:
-                        if c > d:
-                            return a + b + c + d
+    if a and b and c and d and a > b and c > d:
+        return a + b + c + d
     return 0
 
 
@@ -115,7 +108,7 @@ def do_everything(user_data):
     server.sendmail('noreply@example.com', user_data['email'], 'Welcome!')
 
     print(f"User created: {user_data['email']}")
-    
+
     return True
 
 

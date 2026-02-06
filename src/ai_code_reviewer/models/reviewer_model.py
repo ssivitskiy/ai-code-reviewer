@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Any
+from typing import Any
 
 
 class Severity(Enum):
@@ -11,7 +11,7 @@ class Severity(Enum):
     HIGH = "high"
     CRITICAL = "critical"
 
-    def __lt__(self, other: "Severity") -> bool:
+    def __lt__(self, other: Severity) -> bool:
         order = [Severity.LOW, Severity.MEDIUM, Severity.HIGH, Severity.CRITICAL]
         return order.index(self) < order.index(other)
 
@@ -70,14 +70,14 @@ class Issue:
     severity: Severity
     line: int
     message: str
-    suggestion: Optional[str] = None
-    code_suggestion: Optional[str] = None
-    end_line: Optional[int] = None
-    column: Optional[int] = None
-    rule_id: Optional[str] = None
+    suggestion: str | None = None
+    code_suggestion: str | None = None
+    end_line: int | None = None
+    column: int | None = None
+    rule_id: str | None = None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Issue":
+    def from_dict(cls, data: dict[str, Any]) -> Issue:
         return cls(
             type=IssueType(data.get("type", "bug")),
             severity=Severity(data.get("severity", "medium")),
@@ -129,11 +129,11 @@ class ReviewSummary:
     performance_issues: int = 0
     style_issues: int = 0
     quality_score: float = 0.0
-    raw_feedback: Optional[str] = None
+    raw_feedback: str | None = None
 
     @classmethod
-    def from_issues(cls, issues: list[Issue]) -> "ReviewSummary":
-        type_counts = {t: 0 for t in IssueType}
+    def from_issues(cls, issues: list[Issue]) -> ReviewSummary:
+        type_counts = dict.fromkeys(IssueType, 0)
         for issue in issues:
             type_counts[issue.type] += 1
 
@@ -163,7 +163,7 @@ class ReviewResult:
     issues: list[Issue]
     summary: ReviewSummary
     positive_feedback: list[str] = field(default_factory=list)
-    file_path: Optional[str] = None
+    file_path: str | None = None
 
     @classmethod
     def from_dict(
@@ -171,7 +171,7 @@ class ReviewResult:
             data: dict[str, Any],
             code: str,
             language: str,
-    ) -> "ReviewResult":
+    ) -> ReviewResult:
         issues = [Issue.from_dict(i) for i in data.get("issues", [])]
 
         return cls(

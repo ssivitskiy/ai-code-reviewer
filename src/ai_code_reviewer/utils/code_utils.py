@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..parsers.diff_parser import DiffHunk
@@ -129,14 +129,14 @@ EXTENSION_MAP = {
 }
 
 
-def detect_language(code: str, filename: Optional[str] = None) -> str:
+def detect_language(code: str, filename: str | None = None) -> str:
     if filename:
         ext = Path(filename).suffix.lower()
         if ext in EXTENSION_MAP:
             return EXTENSION_MAP[ext]
 
-    scores: dict[str, int] = {lang: 0 for lang in LANGUAGE_PATTERNS}
-    
+    scores: dict[str, int] = dict.fromkeys(LANGUAGE_PATTERNS, 0)
+
     for lang, patterns in LANGUAGE_PATTERNS.items():
         for pattern in patterns:
             if re.search(pattern, code, re.MULTILINE):
@@ -150,12 +150,12 @@ def detect_language(code: str, filename: Optional[str] = None) -> str:
 
 def extract_code_context(
     full_content: str,
-    hunks: list["DiffHunk"],
+    hunks: list[DiffHunk],
     context_lines: int = 10,
 ) -> str:
     lines = full_content.split('\n')
     relevant_ranges: list[tuple[int, int]] = []
-    
+
     for hunk in hunks:
         start = max(0, hunk.new_start - context_lines - 1)
         end = min(len(lines), hunk.new_start + hunk.new_count + context_lines)
@@ -167,24 +167,24 @@ def extract_code_context(
     for start, end in merged:
         context_parts.append(f"... (lines {start + 1}-{end}) ...")
         context_parts.extend(lines[start:end])
-    
+
     return '\n'.join(context_parts)
 
 
 def merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:
     if not ranges:
         return []
-    
+
     sorted_ranges = sorted(ranges, key=lambda x: x[0])
     merged = [sorted_ranges[0]]
-    
+
     for start, end in sorted_ranges[1:]:
         last_start, last_end = merged[-1]
         if start <= last_end:
             merged[-1] = (last_start, max(last_end, end))
         else:
             merged.append((start, end))
-    
+
     return merged
 
 
@@ -197,16 +197,16 @@ def count_complexity(code: str, language: str) -> int:
         'go': ['if', 'for', 'case', '&&', '||'],
         'rust': ['if', 'else if', 'for', 'while', 'match', '&&', '||'],
     }
-    
+
     keywords = complexity_keywords.get(language, complexity_keywords['python'])
     complexity = 1
-    
+
     for keyword in keywords:
         if keyword.isalpha():
             complexity += len(re.findall(rf'\b{keyword}\b', code))
         else:
             complexity += code.count(keyword)
-    
+
     return complexity
 
 
@@ -219,14 +219,14 @@ def find_function_boundaries(code: str, language: str) -> list[dict]:
         'go': r'func\s+(?:\([^)]+\)\s+)?(\w+)\s*\(',
         'rust': r'fn\s+(\w+)\s*[<(]',
     }
-    
+
     pattern = patterns.get(language)
     if not pattern:
         return []
-    
+
     functions = []
     lines = code.split('\n')
-    
+
     for i, line in enumerate(lines):
         match = re.search(pattern, line)
         if match:
@@ -236,7 +236,7 @@ def find_function_boundaries(code: str, language: str) -> list[dict]:
                 'start_line': i + 1,
                 'end_line': None,
             })
-    
+
     return functions
 
 
@@ -250,7 +250,7 @@ def sanitize_code_for_display(code: str, max_length: int = 5000) -> str:
             f"\n\n... ({len(code) - max_length} characters truncated) ...\n\n" +
             sanitized[-half:]
         )
-    
+
     return sanitized
 
 

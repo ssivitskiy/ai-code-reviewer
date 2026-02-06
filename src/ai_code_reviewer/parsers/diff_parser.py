@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class LineType(Enum):
@@ -16,9 +15,9 @@ class LineType(Enum):
 class DiffLine:
     content: str
     line_type: LineType
-    old_line_number: Optional[int] = None
-    new_line_number: Optional[int] = None
-    
+    old_line_number: int | None = None
+    new_line_number: int | None = None
+
     @property
     def is_changed(self) -> bool:
         return self.line_type in (LineType.ADDITION, LineType.DELETION)
@@ -32,20 +31,20 @@ class DiffHunk:
     new_count: int
     lines: list[DiffLine] = field(default_factory=list)
     header: str = ""
-    
+
     @property
     def additions(self) -> list[DiffLine]:
-        return [l for l in self.lines if l.line_type == LineType.ADDITION]
-    
+        return [line for line in self.lines if line.line_type == LineType.ADDITION]
+
     @property
     def deletions(self) -> list[DiffLine]:
-        return [l for l in self.lines if l.line_type == LineType.DELETION]
-    
+        return [line for line in self.lines if line.line_type == LineType.DELETION]
+
     @property
     def changed_new_lines(self) -> list[int]:
-        return [l.new_line_number for l in self.additions if l.new_line_number]
-    
-    def get_context(self, lines: int = 3) -> str:
+        return [line.new_line_number for line in self.additions if line.new_line_number]
+
+    def get_context(self, _lines: int = 3) -> str:
         result = []
         for line in self.lines:
             prefix = {
@@ -60,12 +59,12 @@ class DiffHunk:
 @dataclass
 class FileDiff:
     file_path: str
-    old_path: Optional[str] = None
+    old_path: str | None = None
     hunks: list[DiffHunk] = field(default_factory=list)
     is_new_file: bool = False
     is_deleted_file: bool = False
     is_renamed: bool = False
-    
+
     @property
     def old_content(self) -> str:
         lines = []
@@ -74,7 +73,7 @@ class FileDiff:
                 if line.line_type != LineType.ADDITION:
                     lines.append(line.content)
         return "\n".join(lines)
-    
+
     @property
     def new_content(self) -> str:
         lines = []
@@ -83,11 +82,11 @@ class FileDiff:
                 if line.line_type != LineType.DELETION:
                     lines.append(line.content)
         return "\n".join(lines)
-    
+
     @property
     def total_additions(self) -> int:
         return sum(len(h.additions) for h in self.hunks)
-    
+
     @property
     def total_deletions(self) -> int:
         return sum(len(h.deletions) for h in self.hunks)
@@ -100,15 +99,15 @@ class DiffParser:
     HUNK_HEADER_PATTERN = re.compile(
         r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$'
     )
-    
+
     def parse(self, diff: str) -> list[FileDiff]:
         lines = diff.split('\n')
         file_diffs: list[FileDiff] = []
-        current_file: Optional[FileDiff] = None
-        current_hunk: Optional[DiffHunk] = None
+        current_file: FileDiff | None = None
+        current_hunk: DiffHunk | None = None
         old_line = 0
         new_line = 0
-        
+
         i = 0
         while i < len(lines):
             line = lines[i]
@@ -163,12 +162,12 @@ class DiffParser:
             if hunk_match:
                 if current_hunk and current_file:
                     current_file.hunks.append(current_hunk)
-                
+
                 old_start = int(hunk_match.group(1))
                 old_count = int(hunk_match.group(2) or 1)
                 new_start = int(hunk_match.group(3))
                 new_count = int(hunk_match.group(4) or 1)
-                
+
                 current_hunk = DiffHunk(
                     old_start=old_start,
                     old_count=old_count,
@@ -206,16 +205,16 @@ class DiffParser:
                     ))
                     old_line += 1
                     new_line += 1
-            
+
             i += 1
 
         if current_hunk and current_file:
             current_file.hunks.append(current_hunk)
         if current_file:
             file_diffs.append(current_file)
-        
+
         return file_diffs
-    
+
     def parse_file(self, file_path: str) -> list[FileDiff]:
         with open(file_path) as f:
             return self.parse(f.read())

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import Optional
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -11,10 +10,10 @@ reviewer_instance = None
 
 class ReviewRequest(BaseModel):
     code: str = Field(..., description="Code to review")
-    language: Optional[str] = Field(None, description="Programming language")
-    context: Optional[str] = Field(None, description="Additional context")
+    language: str | None = Field(None, description="Programming language")
+    context: str | None = Field(None, description="Additional context")
     mode: str = Field("standard", description="Review mode: quick, standard, deep")
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [{
@@ -29,18 +28,18 @@ class ReviewRequest(BaseModel):
 
 class DiffReviewRequest(BaseModel):
     diff: str = Field(..., description="Diff content in unified format")
-    file_path: Optional[str] = Field(None, description="File path for context")
-    base_content: Optional[str] = Field(None, description="Full file content for context")
+    file_path: str | None = Field(None, description="File path for context")
+    base_content: str | None = Field(None, description="Full file content for context")
 
 
 class IssueResponse(BaseModel):
     type: str
     severity: str
     line: int
-    end_line: Optional[int] = None
+    end_line: int | None = None
     message: str
-    suggestion: Optional[str] = None
-    code_suggestion: Optional[str] = None
+    suggestion: str | None = None
+    code_suggestion: str | None = None
 
 
 class SummaryResponse(BaseModel):
@@ -57,7 +56,7 @@ class ReviewResponse(BaseModel):
     issues: list[IssueResponse]
     summary: SummaryResponse
     positive_feedback: list[str]
-    file_path: Optional[str] = None
+    file_path: str | None = None
 
 
 class HealthResponse(BaseModel):
@@ -68,7 +67,7 @@ class HealthResponse(BaseModel):
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     global reviewer_instance
     from ai_code_reviewer import CodeReviewer
     reviewer_instance = CodeReviewer()
@@ -107,7 +106,7 @@ async def root():
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     from ai_code_reviewer import __version__
-    
+
     return HealthResponse(
         status="healthy",
         version=__version__,
@@ -120,19 +119,19 @@ async def health_check():
 async def review_code(request: ReviewRequest):
     if not reviewer_instance:
         raise HTTPException(status_code=503, detail="Reviewer not initialized")
-    
+
     try:
         from ai_code_reviewer.analyzer import ReviewMode
 
         if request.mode:
             reviewer_instance.config.mode = ReviewMode(request.mode)
-        
+
         result = reviewer_instance.review(
             code=request.code,
             language=request.language,
             context=request.context,
         )
-        
+
         return ReviewResponse(
             status="success",
             issues=[
@@ -157,26 +156,26 @@ async def review_code(request: ReviewRequest):
             ),
             positive_feedback=result.positive_feedback,
         )
-        
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/review/diff", response_model=list[ReviewResponse], tags=["Review"])
 async def review_diff(request: DiffReviewRequest):
     if not reviewer_instance:
         raise HTTPException(status_code=503, detail="Reviewer not initialized")
-    
+
     try:
         base_content = None
         if request.base_content and request.file_path:
             base_content = {request.file_path: request.base_content}
-        
+
         results = reviewer_instance.review_diff(
             diff=request.diff,
             base_content=base_content,
         )
-        
+
         return [
             ReviewResponse(
                 status="success",
@@ -205,20 +204,20 @@ async def review_diff(request: DiffReviewRequest):
             )
             for result in results
         ]
-        
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/review/file", response_model=ReviewResponse, tags=["Review"])
 async def review_file_content(
     file_path: str,
     content: str,
-    language: Optional[str] = None,
+    language: str | None = None,
 ):
     if not reviewer_instance:
         raise HTTPException(status_code=503, detail="Reviewer not initialized")
-    
+
     try:
         result = reviewer_instance.review(
             code=content,
@@ -226,7 +225,7 @@ async def review_file_content(
             filename=file_path,
         )
         result.file_path = file_path
-        
+
         return ReviewResponse(
             status="success",
             issues=[
@@ -252,6 +251,6 @@ async def review_file_content(
             positive_feedback=result.positive_feedback,
             file_path=result.file_path,
         )
-        
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..analyzer import ReviewMode
@@ -44,27 +44,27 @@ Always respond in valid JSON format with the following structure:
     ],
     "summary": "Brief overall assessment"
 }"""
-    
+
     def build_review_prompt(
         self,
         code: str,
         language: str,
-        context: Optional[str] = None,
-        mode: "ReviewMode" = None,
-        rules: Optional[dict] = None,
+        context: str | None = None,
+        mode: ReviewMode = None,
+        rules: dict | None = None,
     ) -> str:
         numbered_code = self._add_line_numbers(code)
-        
+
         prompt_parts = [
             f"Please review the following {language} code:\n",
             "```" + language,
             numbered_code,
             "```\n",
         ]
-        
+
         if context:
             prompt_parts.append(f"\nContext: {context}\n")
-        
+
         if rules:
             prompt_parts.append("\nAdditional rules to check:")
             for rule, enabled in rules.items():
@@ -74,24 +74,24 @@ Always respond in valid JSON format with the following structure:
 
         if mode:
             prompt_parts.append(self._get_mode_instructions(mode))
-        
+
         prompt_parts.append(
             "\nProvide your review in JSON format as specified in the system prompt."
         )
-        
+
         return "\n".join(prompt_parts)
-    
+
     def build_diff_review_prompt(
         self,
         file_path: str,
-        hunks: list["DiffHunk"],
-        context: Optional[str] = None,
-        mode: "ReviewMode" = None,
+        hunks: list[DiffHunk],
+        context: str | None = None,
+        mode: ReviewMode = None,
     ) -> str:
         prompt_parts = [
             f"Please review the following changes to `{file_path}`:\n",
         ]
-        
+
         for i, hunk in enumerate(hunks):
             prompt_parts.append(f"\n### Change {i + 1} (lines {hunk.new_start}-{hunk.new_start + hunk.new_count}):")
             if hunk.header:
@@ -99,7 +99,7 @@ Always respond in valid JSON format with the following structure:
             prompt_parts.append("```diff")
             prompt_parts.append(hunk.get_context())
             prompt_parts.append("```")
-        
+
         if context:
             prompt_parts.append("\n### Full File Context:")
             prompt_parts.append("```")
@@ -107,21 +107,21 @@ Always respond in valid JSON format with the following structure:
             if len(context) > 2000:
                 prompt_parts.append("... (truncated)")
             prompt_parts.append("```")
-        
+
         prompt_parts.append(
             "\nFocus on the ADDED lines (+ prefix). "
             "Report line numbers from the NEW file version."
         )
-        
+
         if mode:
             prompt_parts.append(self._get_mode_instructions(mode))
-        
+
         prompt_parts.append(
             "\nProvide your review in JSON format as specified in the system prompt."
         )
-        
+
         return "\n".join(prompt_parts)
-    
+
     def _add_line_numbers(self, code: str) -> str:
         lines = code.split('\n')
         width = len(str(len(lines)))
@@ -129,7 +129,7 @@ Always respond in valid JSON format with the following structure:
         for i, line in enumerate(lines, 1):
             numbered.append(f"{i:>{width}} | {line}")
         return '\n'.join(numbered)
-    
+
     def _format_rule(self, rule: str) -> str:
         rule_descriptions = {
             "check_types": "Verify type hints are correct and complete",
@@ -142,10 +142,10 @@ Always respond in valid JSON format with the following structure:
             "null_safety": "Check for potential null/undefined issues",
         }
         return rule_descriptions.get(rule, rule.replace('_', ' ').title())
-    
-    def _get_mode_instructions(self, mode: "ReviewMode") -> str:
+
+    def _get_mode_instructions(self, mode: ReviewMode) -> str:
         from ..analyzer import ReviewMode
-        
+
         instructions = {
             ReviewMode.QUICK: (
                 "\nMode: QUICK REVIEW\n"
