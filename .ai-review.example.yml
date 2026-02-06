@@ -1,0 +1,75 @@
+model:
+  provider: "openai"
+  name: "gpt-4"
+  temperature: 0.1
+
+
+review:
+  severity_threshold: "low"
+  max_comments: 20
+  include_positive: true
+  mode: "standard"
+
+rules:
+  python:
+    check_types: true
+    docstring_required: true
+    max_complexity: 10
+    security_check: true
+  
+  javascript:
+    prefer_const: true
+    no_var: true
+    strict_equality: true
+  
+  typescript:
+    no_any: true
+    explicit_returns: true
+    strict_null_checks: true
+  
+  go:
+    check_errors: true
+    check_defer: true
+  
+  rust:
+    no_unwrap: false
+    check_unsafe: true
+
+ignore:
+  - "*.test.js"
+  - "*.test.ts"
+  - "*_test.go"
+  - "test_*.py"
+  - "tests/**"
+
+  - "**/__pycache__/**"
+  - "**/node_modules/**"
+  - "vendor/**"
+  - "dist/**"
+  - "build/**"
+  - "*.min.js"
+  - "*.min.css"
+
+  - "*.config.js"
+  - "*.config.ts"
+
+  - "docs/**"
+  - "*.md"
+
+github:
+  add_labels: true
+  labels:
+    clean: "ai-review:clean"
+    bugs: "ai-review:bugs"
+    security: "ai-review:security"
+    suggestions: "ai-review:suggestions"
+
+  post_summary: true
+
+  request_changes_on_critical: true
+
+output:
+  format: "text"
+  show_suggestions: true
+  show_line_numbers: true
+  colorize: true
