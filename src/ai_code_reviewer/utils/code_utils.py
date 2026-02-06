@@ -143,7 +143,7 @@ def detect_language(code: str, filename: str | None = None) -> str:
                 scores[lang] += 1
 
     if max(scores.values()) > 0:
-        return max(scores, key=scores.get)
+        return max(scores, key=lambda k: scores[k])
 
     return "code"
 

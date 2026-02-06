@@ -50,7 +50,7 @@ Always respond in valid JSON format with the following structure:
         code: str,
         language: str,
         context: str | None = None,
-        mode: ReviewMode = None,
+        mode: ReviewMode | None = None,
         rules: dict | None = None,
     ) -> str:
         numbered_code = self._add_line_numbers(code)
@@ -86,7 +86,7 @@ Always respond in valid JSON format with the following structure:
         file_path: str,
         hunks: list[DiffHunk],
         context: str | None = None,
-        mode: ReviewMode = None,
+        mode: ReviewMode | None = None,
     ) -> str:
         prompt_parts = [
             f"Please review the following changes to `{file_path}`:\n",

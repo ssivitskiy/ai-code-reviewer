@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from typing import Optional, Any
 
 from .models.reviewer_model import (
     LLMProvider,
@@ -31,7 +32,7 @@ class ReviewConfig:
     max_issues: int = 20
     include_positive_feedback: bool = True
     mode: ReviewMode = ReviewMode.STANDARD
-    language_rules: dict = field(default_factory=dict)
+    language_rules: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_file(cls, path: str | Path) -> ReviewConfig:
@@ -82,12 +83,12 @@ class CodeReviewer:
         return ""
 
     @property
-    def client(self):
+    def client(self) -> Any:
         if self._client is None:
             self._client = self._create_client()
         return self._client
 
-    def _create_client(self):
+    def _create_client(self) -> Any:
         if self.config.provider == LLMProvider.OPENAI:
             from openai import OpenAI
             return OpenAI(api_key=self.api_key)
